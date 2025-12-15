@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "ollama_server": "localhost",
+  "ollama_port": 11434,
+  "ollama_model": "llama2",
+  "volume": 75,
+  "conversation_history_enabled": true,
+  "max_conversation_turns": 10,
+  "wake_word": "jasper",
+  "log_max_size_mb": 2048,
+  "log_retention_days": 30,
+  "audio_input_device": "default",
+  "audio_output_device": "default",
+  "sample_rate": 16000,
+  "vad_aggressiveness": 3
+}

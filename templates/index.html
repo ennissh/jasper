@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jasper Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.active {
+            background: #10b981;
+        }
+
+        .status-dot.inactive {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .volume-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .logs-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .conversation-history {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .conversation-entry {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background: #f9fafb;
+        }
+
+        .conversation-entry.user {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .conversation-entry.assistant {
+            background: #f3e8ff;
+            border-left: 4px solid #a855f7;
+        }
+
+        .conversation-entry .role {
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .conversation-entry .content {
+            color: #333;
+        }
+
+        .conversation-entry .timestamp {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Jasper Control Panel</h1>
+            <div class="user-info">
+                <span>Welcome, <strong>admin</strong></span>
+                <a href="/logout"><button class="btn btn-danger">Logout</button></a>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="dashboard">
+            <!-- Status Card -->
+            <div class="card">
+                <h2>System Status</h2>
+
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <div>
+                        <strong id="statusText">Loading...</strong>
+                        <div style="font-size: 12px; color: #666;" id="statusDetails"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Global On/Off</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enableToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="controlService('start')">Start Service</button>
+                    <button class="btn btn-danger" onclick="controlService('stop')">Stop Service</button>
+                    <button class="btn btn-primary" onclick="controlService('restart')">Restart</button>
+                </div>
+            </div>
+
+            <!-- Configuration Card -->
+            <div class="card">
+                <h2>Ollama Configuration</h2>
+
+                <div class="form-group">
+                    <label for="ollamaServer">Server Address</label>
+                    <input type="text" id="ollamaServer" placeholder="localhost">
+                </div>
+
+                <div class="form-group">
+                    <label for="ollamaPort">Port</label>
+                    <input type="number" id="ollamaPort" placeholder="11434">
+                </div>
+
+                <div class="form-group">
+                    <label for="ollamaModel">Model</label>
+                    <input type="text" id="ollamaModel" placeholder="llama2">
+                </div>
+
+                <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+            </div>
+
+            <!-- Volume Control Card -->
+            <div class="card">
+                <h2>Volume Control</h2>
+
+                <div class="form-group">
+                    <label for="volumeSlider">Output Volume</label>
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="75">
+                    <div class="volume-display"><span id="volumeValue">75</span>%</div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="conversationHistoryToggle">
+                        Enable Conversation History
+                    </label>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveConfig()">Save Settings</button>
+                    <button class="btn btn-danger" onclick="clearConversationHistory()">Clear History</button>
+                </div>
+            </div>
+
+            <!-- Conversation History Card -->
+            <div class="card">
+                <h2>Recent Conversations</h2>
+                <div class="conversation-history" id="conversationHistory">
+                    <p style="text-align: center; color: #999;">No conversations yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Card (Full Width) -->
+        <div class="card">
+            <h2>Real-time Logs</h2>
+            <div class="logs-container" id="logsContainer">
+                <div class="log-entry">Connecting to log stream...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let config = {};
+        let logEventSource = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfig();
+            loadStatus();
+            loadConversationHistory();
+            connectLogStream();
+
+            // Update status every 5 seconds
+            setInterval(loadStatus, 5000);
+
+            // Update conversation history every 10 seconds
+            setInterval(loadConversationHistory, 10000);
+
+            // Setup event listeners
+            document.getElementById('enableToggle').addEventListener('change', function(e) {
+                updateEnabled(e.target.checked);
+            });
+
+            document.getElementById('volumeSlider').addEventListener('input', function(e) {
+                document.getElementById('volumeValue').textContent = e.target.value;
+            });
+        });
+
+        // Load configuration
+        function loadConfig() {
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(data => {
+                    config = data;
+                    document.getElementById('enableToggle').checked = data.enabled || false;
+                    document.getElementById('ollamaServer').value = data.ollama_server || 'localhost';
+                    document.getElementById('ollamaPort').value = data.ollama_port || 11434;
+                    document.getElementById('ollamaModel').value = data.ollama_model || 'llama2';
+                    document.getElementById('volumeSlider').value = data.volume || 75;
+                    document.getElementById('volumeValue').textContent = data.volume || 75;
+                    document.getElementById('conversationHistoryToggle').checked = data.conversation_history_enabled !== false;
+                })
+                .catch(error => {
+                    console.error('Error loading config:', error);
+                    showAlert('Failed to load configuration', 'error');
+                });
+        }
+
+        // Load system status
+        function loadStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDot = document.getElementById('statusDot');
+                    const statusText = document.getElementById('statusText');
+                    const statusDetails = document.getElementById('statusDetails');
+
+                    if (data.service_running && data.enabled) {
+                        statusDot.className = 'status-dot active';
+                        statusText.textContent = 'Jasper is Active';
+                        statusDetails.textContent = 'Listening for wake word...';
+                    } else if (data.service_running && !data.enabled) {
+                        statusDot.className = 'status-dot inactive';
+                        statusText.textContent = 'Jasper is Disabled';
+                        statusDetails.textContent = 'Service running but disabled in config';
+                    } else {
+                        statusDot.className = 'status-dot inactive';
+                        statusText.textContent = 'Service Not Running';
+                        statusDetails.textContent = 'Click "Start Service" to begin';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading status:', error);
+                });
+        }
+
+        // Save configuration
+        function saveConfig() {
+            const newConfig = {
+                enabled: document.getElementById('enableToggle').checked,
+                ollama_server: document.getElementById('ollamaServer').value,
+                ollama_port: parseInt(document.getElementById('ollamaPort').value),
+                ollama_model: document.getElementById('ollamaModel').value,
+                volume: parseInt(document.getElementById('volumeSlider').value),
+                conversation_history_enabled: document.getElementById('conversationHistoryToggle').checked
+            };
+
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newConfig)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Configuration saved successfully!', 'success');
+                    loadConfig();
+                } else {
+                    showAlert('Failed to save configuration: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving config:', error);
+                showAlert('Failed to save configuration', 'error');
+            });
+        }
+
+        // Update enabled status
+        function updateEnabled(enabled) {
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enabled: enabled })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(enabled ? 'Jasper enabled!' : 'Jasper disabled!', 'success');
+                    loadStatus();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating enabled status:', error);
+                showAlert('Failed to update status', 'error');
+            });
+        }
+
+        // Control service
+        function controlService(action) {
+            showAlert(`${action.charAt(0).toUpperCase() + action.slice(1)}ing service...`, 'success');
+
+            fetch(`/api/service/${action}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(`Service ${action}ed successfully!`, 'success');
+                    setTimeout(loadStatus, 2000);
+                } else {
+                    showAlert(`Failed to ${action} service: ` + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`Error ${action}ing service:`, error);
+                showAlert(`Failed to ${action} service`, 'error');
+            });
+        }
+
+        // Load conversation history
+        function loadConversationHistory() {
+            fetch('/api/conversation_history')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('conversationHistory');
+
+                    if (!data.history || data.history.length === 0) {
+                        container.innerHTML = '<p style="text-align: center; color: #999;">No conversations yet</p>';
+                        return;
+                    }
+
+                    container.innerHTML = data.history.slice(-10).reverse().map(entry => {
+                        const timestamp = new Date(entry.timestamp).toLocaleString();
+                        return `
+                            <div class="conversation-entry ${entry.role}">
+                                <div class="role">${entry.role}</div>
+                                <div class="content">${entry.content}</div>
+                                <div class="timestamp">${timestamp}</div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading conversation history:', error);
+                });
+        }
+
+        // Clear conversation history
+        function clearConversationHistory() {
+            if (!confirm('Are you sure you want to clear all conversation history?')) {
+                return;
+            }
+
+            fetch('/api/conversation_history', {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Conversation history cleared!', 'success');
+                    loadConversationHistory();
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing history:', error);
+                showAlert('Failed to clear conversation history', 'error');
+            });
+        }
+
+        // Connect to log stream
+        function connectLogStream() {
+            if (logEventSource) {
+                logEventSource.close();
+            }
+
+            logEventSource = new EventSource('/api/logs/stream');
+            const logsContainer = document.getElementById('logsContainer');
+
+            logEventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.log) {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry';
+                    logEntry.textContent = data.log;
+                    logsContainer.appendChild(logEntry);
+
+                    // Keep only last 200 log entries
+                    while (logsContainer.children.length > 200) {
+                        logsContainer.removeChild(logsContainer.firstChild);
+                    }
+
+                    // Auto-scroll to bottom
+                    logsContainer.scrollTop = logsContainer.scrollHeight;
+                }
+            };
+
+            logEventSource.onerror = function(error) {
+                console.error('EventSource error:', error);
+                setTimeout(connectLogStream, 5000);
+            };
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

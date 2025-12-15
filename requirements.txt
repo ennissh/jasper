@@ -1,0 +1,28 @@
+# Jasper Voice Assistant - Python Dependencies
+# For Raspberry Pi 4B 8GB with ReSpeaker 2-Mics Pi HAT
+
+# Speech Recognition
+vosk==0.3.45
+
+# Audio Processing
+pyaudio==0.2.14
+sounddevice==0.4.6
+webrtcvad==2.0.10
+
+# Wake Word Detection
+openwakeword==0.5.1
+
+# Web Framework
+flask==3.0.0
+flask-login==0.6.3
+flask-cors==4.0.0
+
+# HTTP Requests (for Ollama)
+requests==2.31.0
+
+# Scientific Computing
+numpy==1.24.3
+scipy==1.11.4
+
+# Utilities
+python-dotenv==1.0.0
