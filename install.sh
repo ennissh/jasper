@@ -31,27 +31,53 @@ $SUDO_CMD apt-get upgrade -y
 # Install system dependencies
 echo "[2/10] Installing system dependencies..."
 
-# Detect best compatible Python 3 version
+# Detect and install best compatible Python 3 version
 # Prefer 3.11 or 3.12 for better compatibility with dependencies
 # Python 3.13 is too new for some packages like tflite-runtime (required by openwakeword)
-if command -v python3.11 &> /dev/null; then
+
+# First, try to install Python 3.11 or 3.12 if they're available in apt repository
+PYTHON_VERSION=""
+PYTHON_CMD=""
+
+# Check if Python 3.11 is available in apt and install it
+if apt-cache show python3.11 &> /dev/null; then
+    echo "Python 3.11 is available in repository, installing..."
+    $SUDO_CMD apt-get install -y python3.11 python3.11-venv python3.11-dev
     PYTHON_VERSION="3.11"
     PYTHON_CMD="python3.11"
     echo "Using Python 3.11 for best compatibility"
-elif command -v python3.12 &> /dev/null; then
+# If not, check for Python 3.12
+elif apt-cache show python3.12 &> /dev/null; then
+    echo "Python 3.12 is available in repository, installing..."
+    $SUDO_CMD apt-get install -y python3.12 python3.12-venv python3.12-dev
     PYTHON_VERSION="3.12"
     PYTHON_CMD="python3.12"
     echo "Using Python 3.12 for best compatibility"
+# If neither 3.11 nor 3.12 are available, check what's already installed
+elif command -v python3.11 &> /dev/null; then
+    PYTHON_VERSION="3.11"
+    PYTHON_CMD="python3.11"
+    echo "Using existing Python 3.11 for best compatibility"
+elif command -v python3.12 &> /dev/null; then
+    PYTHON_VERSION="3.12"
+    PYTHON_CMD="python3.12"
+    echo "Using existing Python 3.12 for best compatibility"
 elif command -v python3.13 &> /dev/null; then
     PYTHON_VERSION="3.13"
     PYTHON_CMD="python3.13"
     echo "WARNING: Using Python 3.13 which may have compatibility issues with some dependencies"
-    echo "If installation fails, please use Python 3.11 or 3.12 instead"
+    echo "If installation fails, please install Python 3.11 or 3.12 manually"
 else
     # Fall back to default python3
     PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
     PYTHON_CMD="python${PYTHON_VERSION}"
     echo "Detected Python version: ${PYTHON_VERSION}"
+
+    # If default python3 is 3.13+, warn about compatibility
+    if [ "${PYTHON_VERSION}" = "3.13" ] || [ "${PYTHON_VERSION}" = "3.14" ]; then
+        echo "WARNING: Using Python ${PYTHON_VERSION} which may have compatibility issues with some dependencies"
+        echo "If installation fails, please install Python 3.11 or 3.12 manually"
+    fi
 fi
 
 # Check minimum Python version (3.9+)
@@ -59,31 +85,6 @@ MIN_VERSION="3.9"
 if [ "$(printf '%s\n' "$MIN_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" != "$MIN_VERSION" ]; then
     echo "ERROR: Python ${PYTHON_VERSION} is too old. Minimum required version is ${MIN_VERSION}"
     exit 1
-fi
-
-# Install Python development packages
-PYTHON_PKG="python${PYTHON_VERSION}"
-PYTHON_VENV_PKG="${PYTHON_PKG}-venv"
-PYTHON_DEV_PKG="${PYTHON_PKG}-dev"
-
-echo "Installing Python packages: ${PYTHON_PKG}, ${PYTHON_VENV_PKG}, ${PYTHON_DEV_PKG}"
-
-# Check if packages are already installed
-PACKAGES_TO_INSTALL=""
-if ! dpkg -l | grep -q "^ii  ${PYTHON_PKG} "; then
-    PACKAGES_TO_INSTALL="${PACKAGES_TO_INSTALL} ${PYTHON_PKG}"
-fi
-if ! dpkg -l | grep -q "^ii  ${PYTHON_VENV_PKG} "; then
-    PACKAGES_TO_INSTALL="${PACKAGES_TO_INSTALL} ${PYTHON_VENV_PKG}"
-fi
-if ! dpkg -l | grep -q "^ii  ${PYTHON_DEV_PKG} "; then
-    PACKAGES_TO_INSTALL="${PACKAGES_TO_INSTALL} ${PYTHON_DEV_PKG}"
-fi
-
-if [ -n "$PACKAGES_TO_INSTALL" ]; then
-    $SUDO_CMD apt-get install -y ${PACKAGES_TO_INSTALL}
-else
-    echo "All Python ${PYTHON_VERSION} packages already installed, skipping..."
 fi
 
 # Install remaining system dependencies
