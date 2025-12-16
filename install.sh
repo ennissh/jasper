@@ -30,7 +30,7 @@ sudo apt-get install -y \
     python3-dev \
     portaudio19-dev \
     libasound2-dev \
-    libatlas-base-dev \
+    libopenblas-dev \
     festival \
     festival-dev \
     alsa-utils \
