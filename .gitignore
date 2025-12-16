@@ -40,3 +40,6 @@ data/
 
 # Config (may contain sensitive info)
 config.json
+
+# Third-party repositories cloned during installation
+seeed-voicecard/

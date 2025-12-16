@@ -13,21 +13,32 @@ echo ""
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
-    echo "Please do not run as root. Run as regular user with sudo privileges."
-    exit 1
+    echo "WARNING: Running as root. This is not recommended for production systems."
+    echo "For production, run as a regular user with sudo privileges."
+    echo "Continuing in 3 seconds..."
+    sleep 3
+    # When running as root, don't use sudo
+    SUDO_CMD=""
+else
+    SUDO_CMD="sudo"
 fi
 
 # Update system
 echo "[1/10] Updating system packages..."
-sudo apt-get update
-sudo apt-get upgrade -y
+$SUDO_CMD apt-get update
+$SUDO_CMD apt-get upgrade -y
 
 # Install system dependencies
 echo "[2/10] Installing system dependencies..."
-sudo apt-get install -y \
-    python3.11 \
-    python3.11-venv \
-    python3.11-dev \
+# Install Python 3.11 packages if not already installed
+if ! dpkg -l | grep -q "^ii  python3.11 "; then
+    $SUDO_CMD apt-get install -y python3.11 python3.11-venv python3.11-dev
+else
+    echo "Python 3.11 packages already installed, skipping..."
+fi
+
+# Install remaining system dependencies
+$SUDO_CMD apt-get install -y \
     python3-pip \
     portaudio19-dev \
     libasound2-dev \
@@ -48,7 +59,7 @@ echo "[3/10] Installing ReSpeaker 2-Mics HAT drivers..."
 if [ ! -d "seeed-voicecard" ]; then
     git clone https://github.com/respeaker/seeed-voicecard.git
     cd seeed-voicecard
-    sudo ./install.sh
+    $SUDO_CMD ./install.sh
     cd ..
 else
     echo "ReSpeaker drivers already installed, skipping..."
@@ -114,7 +125,7 @@ PYTHON_SCRIPT
 
 # Configure ALSA for ReSpeaker
 echo "[9/10] Configuring audio for ReSpeaker HAT..."
-sudo tee /etc/asound.conf > /dev/null << 'EOF'
+$SUDO_CMD tee /etc/asound.conf > /dev/null << 'EOF'
 pcm.!default {
     type asym
     capture.pcm "mic"
@@ -161,7 +172,7 @@ fi
 
 # Create systemd service
 echo "Creating systemd service..."
-sudo tee /etc/systemd/system/jasperd.service > /dev/null << EOF
+$SUDO_CMD tee /etc/systemd/system/jasperd.service > /dev/null << EOF
 [Unit]
 Description=Jasper Voice Assistant Daemon
 After=network.target sound.target
@@ -181,7 +192,7 @@ EOF
 
 # Create webapp systemd service
 echo "Creating webapp systemd service..."
-sudo tee /etc/systemd/system/jasper-webapp.service > /dev/null << EOF
+$SUDO_CMD tee /etc/systemd/system/jasper-webapp.service > /dev/null << EOF
 [Unit]
 Description=Jasper Voice Assistant Web Interface
 After=network.target
@@ -200,9 +211,9 @@ WantedBy=multi-user.target
 EOF
 
 # Reload systemd and enable services
-sudo systemctl daemon-reload
-sudo systemctl enable jasperd.service
-sudo systemctl enable jasper-webapp.service
+$SUDO_CMD systemctl daemon-reload
+$SUDO_CMD systemctl enable jasperd.service
+$SUDO_CMD systemctl enable jasper-webapp.service
 
 echo ""
 echo "================================================"
