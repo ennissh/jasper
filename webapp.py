@@ -23,9 +23,10 @@ except ImportError as e:
     print(f"Missing module: {e.name}", file=sys.stderr)
     print("", file=sys.stderr)
     print("To fix this issue, run ONE of the following:", file=sys.stderr)
-    print("  1. Install dependencies: pip3 install flask==3.0.0 flask-login==0.6.3 flask-cors==4.0.0", file=sys.stderr)
-    print("  2. Run the installation script: ./install.sh", file=sys.stderr)
-    print("  3. Use the startup script: ./run_webapp.sh", file=sys.stderr)
+    print("  1. Use the startup script (RECOMMENDED): ./run_webapp.sh", file=sys.stderr)
+    print("  2. Run the full installation script: ./install.sh", file=sys.stderr)
+    print("  3. Install dependencies manually:", file=sys.stderr)
+    print("     pip3 install --break-system-packages flask==3.0.0 flask-login==0.6.3 flask-cors==4.0.0", file=sys.stderr)
     print("", file=sys.stderr)
     sys.exit(1)
 
