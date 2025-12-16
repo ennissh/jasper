@@ -408,9 +408,39 @@ class JasperAssistant:
             model=config.get("ollama_model", "llama2")
         )
         self.audio = pyaudio.PyAudio()
+        self.audio_available = self._check_audio_devices()
+
+    def _check_audio_devices(self):
+        """Check if audio input devices are available."""
+        try:
+            device_count = self.audio.get_device_count()
+            if device_count == 0:
+                logging.error("No audio devices found")
+                return False
+
+            # Check for input devices
+            has_input = False
+            for i in range(device_count):
+                device_info = self.audio.get_device_info_by_index(i)
+                if device_info.get('maxInputChannels', 0) > 0:
+                    has_input = True
+                    logging.info(f"Found input device: {device_info.get('name')}")
+                    break
+
+            if not has_input:
+                logging.error("No audio input devices found")
+                return False
+
+            return True
+        except Exception as e:
+            logging.error(f"Error checking audio devices: {e}")
+            return False
 
     def listen_for_wake_word(self):
         """Continuously listen for wake word."""
+        if not self.audio_available:
+            return False
+
         stream = None
 
         try:
@@ -483,6 +513,28 @@ class JasperAssistant:
                     logging.info("Jasper is disabled. Waiting...")
                     time.sleep(5)
                     load_config()
+                    continue
+
+                # Check if audio devices are available
+                if not self.audio_available:
+                    logging.error("=" * 50)
+                    logging.error("HARDWARE REQUIREMENT ERROR")
+                    logging.error("=" * 50)
+                    logging.error("Jasper requires audio input devices to function.")
+                    logging.error("This system has no audio devices available.")
+                    logging.error("")
+                    logging.error("Jasper is designed to run on:")
+                    logging.error("  - Raspberry Pi 4B with ReSpeaker 2-Mics Pi HAT")
+                    logging.error("  - Or any system with microphone and speakers")
+                    logging.error("")
+                    logging.error("If running in Docker, you need to:")
+                    logging.error("  1. Pass through audio devices with --device /dev/snd")
+                    logging.error("  2. Or run directly on Raspberry Pi hardware")
+                    logging.error("")
+                    logging.error("Jasper will check again in 30 seconds...")
+                    logging.error("=" * 50)
+                    time.sleep(30)
+                    self.audio_available = self._check_audio_devices()
                     continue
 
                 # Listen for wake word

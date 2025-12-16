@@ -1,4 +1,35 @@
-# Jasper Web Interface Deployment Guide
+# Jasper Deployment Guide
+
+## Hardware Requirements
+
+**IMPORTANT:** Jasper requires audio hardware to function. It is designed to run on:
+- **Raspberry Pi 4B 8GB with ReSpeaker 2-Mics Pi HAT** (recommended)
+- Any Linux system with microphone and speakers/audio output
+
+### Audio Device Requirements
+
+Jasper cannot run without audio input devices. If you see errors like:
+```
+ERROR - Error in main loop: [Errno -9996] Invalid input device (no default output device)
+```
+
+This means:
+1. **No audio hardware is available** - Common in Docker containers or headless systems
+2. **Audio drivers not loaded** - May need to reboot after installing ReSpeaker drivers
+3. **Permissions issue** - User needs access to audio devices
+
+### Running in Docker (Limited Support)
+
+Jasper has **limited Docker support** because it requires audio hardware passthrough:
+
+```bash
+# To run in Docker with audio (if host has audio devices):
+docker run --device /dev/snd:/dev/snd --group-add audio your-jasper-image
+
+# Note: This still requires the host system to have audio devices
+```
+
+**Recommended:** Run Jasper directly on Raspberry Pi hardware, not in containers.
 
 ## Quick Fix for "TemplateNotFound" Error
 
@@ -67,6 +98,18 @@ jasper/
 ```
 
 ## Troubleshooting
+
+### Error: "Invalid input device (no default output device)"
+- **Cause:** No audio hardware available or not accessible
+- **Fix Options:**
+  1. **Raspberry Pi:** Reboot after running `install.sh` to load audio drivers
+  2. **Docker:** Use `--device /dev/snd` flag or run on bare metal
+  3. **Permissions:** Add user to `audio` group: `sudo usermod -aG audio $USER`
+  4. **Check devices:** Run `arecord -l` to list audio input devices
+
+### Error: "Jasper is disabled. Waiting..."
+- **Cause:** Jasper is disabled in config.json
+- **Fix:** Edit `config.json` and set `"enabled": true`
 
 ### Error: "TemplateNotFound: login.html"
 - **Cause:** Running webapp.py from wrong directory
