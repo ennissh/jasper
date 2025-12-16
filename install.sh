@@ -4,6 +4,7 @@ set -e
 # Jasper Voice Assistant Installation Script
 # For Raspberry Pi 4B 8GB with ReSpeaker 2-Mics Pi HAT
 # OS: Raspberry Pi OS Trixie
+# Note: Uses Python 3.11 for compatibility with ML libraries (openwakeword, tflite-runtime)
 
 echo "================================================"
 echo "  Jasper Voice Assistant Installation Script"
@@ -24,10 +25,10 @@ sudo apt-get upgrade -y
 # Install system dependencies
 echo "[2/10] Installing system dependencies..."
 sudo apt-get install -y \
-    python3 \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
     python3-pip \
-    python3-venv \
-    python3-dev \
     portaudio19-dev \
     libasound2-dev \
     libopenblas-dev \
@@ -64,7 +65,7 @@ mkdir -p ~/jasper/static
 # Create Python virtual environment
 echo "[5/10] Creating Python virtual environment..."
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
+    python3.11 -m venv venv
 fi
 
 # Activate virtual environment
@@ -102,7 +103,7 @@ fi
 
 # Download openwakeword models
 echo "[8/10] Setting up wake word detection..."
-python3 << 'PYTHON_SCRIPT'
+venv/bin/python3 << 'PYTHON_SCRIPT'
 import openwakeword
 from openwakeword.model import Model
 
@@ -169,7 +170,7 @@ After=network.target sound.target
 Type=simple
 User=$USER
 WorkingDirectory=$(pwd)
-ExecStart=$(pwd)/venv/bin/python3 $(pwd)/jasperd.py
+ExecStart=$(pwd)/venv/bin/python $(pwd)/jasperd.py
 Restart=always
 RestartSec=10
 Environment="PYTHONUNBUFFERED=1"
@@ -189,7 +190,7 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$(pwd)
-ExecStart=$(pwd)/venv/bin/python3 $(pwd)/webapp.py
+ExecStart=$(pwd)/venv/bin/python $(pwd)/webapp.py
 Restart=always
 RestartSec=10
 Environment="PYTHONUNBUFFERED=1"
