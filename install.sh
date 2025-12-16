@@ -31,11 +31,28 @@ $SUDO_CMD apt-get upgrade -y
 # Install system dependencies
 echo "[2/10] Installing system dependencies..."
 
-# Detect Python 3 version
-PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-PYTHON_CMD="python${PYTHON_VERSION}"
-
-echo "Detected Python version: ${PYTHON_VERSION}"
+# Detect best compatible Python 3 version
+# Prefer 3.11 or 3.12 for better compatibility with dependencies
+# Python 3.13 is too new for some packages like tflite-runtime (required by openwakeword)
+if command -v python3.11 &> /dev/null; then
+    PYTHON_VERSION="3.11"
+    PYTHON_CMD="python3.11"
+    echo "Using Python 3.11 for best compatibility"
+elif command -v python3.12 &> /dev/null; then
+    PYTHON_VERSION="3.12"
+    PYTHON_CMD="python3.12"
+    echo "Using Python 3.12 for best compatibility"
+elif command -v python3.13 &> /dev/null; then
+    PYTHON_VERSION="3.13"
+    PYTHON_CMD="python3.13"
+    echo "WARNING: Using Python 3.13 which may have compatibility issues with some dependencies"
+    echo "If installation fails, please use Python 3.11 or 3.12 instead"
+else
+    # Fall back to default python3
+    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    PYTHON_CMD="python${PYTHON_VERSION}"
+    echo "Detected Python version: ${PYTHON_VERSION}"
+fi
 
 # Check minimum Python version (3.9+)
 MIN_VERSION="3.9"
