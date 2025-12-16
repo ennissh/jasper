@@ -191,11 +191,11 @@ fi
 
 # Create project directory structure
 echo "[4/10] Creating directory structure..."
-mkdir -p ~/jasper/logs
-mkdir -p ~/jasper/models
-mkdir -p ~/jasper/data
-mkdir -p ~/jasper/templates
-mkdir -p ~/jasper/static
+mkdir -p logs
+mkdir -p models
+mkdir -p data
+mkdir -p templates
+mkdir -p static
 
 # Create Python virtual environment
 echo "[5/10] Creating Python virtual environment..."
