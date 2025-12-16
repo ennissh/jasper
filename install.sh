@@ -3,8 +3,8 @@ set -e
 
 # Jasper Voice Assistant Installation Script
 # For Raspberry Pi 4B 8GB with ReSpeaker 2-Mics Pi HAT
-# OS: Raspberry Pi OS Trixie
-# Note: Uses Python 3.11 for compatibility with ML libraries (openwakeword, tflite-runtime)
+# OS: Raspberry Pi OS (Debian/Ubuntu based)
+# Note: Automatically detects and uses available Python 3.9+ version
 
 echo "================================================"
 echo "  Jasper Voice Assistant Installation Script"
@@ -30,11 +30,43 @@ $SUDO_CMD apt-get upgrade -y
 
 # Install system dependencies
 echo "[2/10] Installing system dependencies..."
-# Install Python 3.11 packages if not already installed
-if ! dpkg -l | grep -q "^ii  python3.11 "; then
-    $SUDO_CMD apt-get install -y python3.11 python3.11-venv python3.11-dev
+
+# Detect Python 3 version
+PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+PYTHON_CMD="python${PYTHON_VERSION}"
+
+echo "Detected Python version: ${PYTHON_VERSION}"
+
+# Check minimum Python version (3.9+)
+MIN_VERSION="3.9"
+if [ "$(printf '%s\n' "$MIN_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" != "$MIN_VERSION" ]; then
+    echo "ERROR: Python ${PYTHON_VERSION} is too old. Minimum required version is ${MIN_VERSION}"
+    exit 1
+fi
+
+# Install Python development packages
+PYTHON_PKG="python${PYTHON_VERSION}"
+PYTHON_VENV_PKG="${PYTHON_PKG}-venv"
+PYTHON_DEV_PKG="${PYTHON_PKG}-dev"
+
+echo "Installing Python packages: ${PYTHON_PKG}, ${PYTHON_VENV_PKG}, ${PYTHON_DEV_PKG}"
+
+# Check if packages are already installed
+PACKAGES_TO_INSTALL=""
+if ! dpkg -l | grep -q "^ii  ${PYTHON_PKG} "; then
+    PACKAGES_TO_INSTALL="${PACKAGES_TO_INSTALL} ${PYTHON_PKG}"
+fi
+if ! dpkg -l | grep -q "^ii  ${PYTHON_VENV_PKG} "; then
+    PACKAGES_TO_INSTALL="${PACKAGES_TO_INSTALL} ${PYTHON_VENV_PKG}"
+fi
+if ! dpkg -l | grep -q "^ii  ${PYTHON_DEV_PKG} "; then
+    PACKAGES_TO_INSTALL="${PACKAGES_TO_INSTALL} ${PYTHON_DEV_PKG}"
+fi
+
+if [ -n "$PACKAGES_TO_INSTALL" ]; then
+    $SUDO_CMD apt-get install -y ${PACKAGES_TO_INSTALL}
 else
-    echo "Python 3.11 packages already installed, skipping..."
+    echo "All Python ${PYTHON_VERSION} packages already installed, skipping..."
 fi
 
 # Install remaining system dependencies
@@ -76,7 +108,8 @@ mkdir -p ~/jasper/static
 # Create Python virtual environment
 echo "[5/10] Creating Python virtual environment..."
 if [ ! -d "venv" ]; then
-    python3.11 -m venv venv
+    ${PYTHON_CMD} -m venv venv
+    echo "Virtual environment created using ${PYTHON_CMD}"
 fi
 
 # Activate virtual environment
