@@ -1,5 +1,5 @@
 {
-  "enabled": false,
+  "enabled": true,
   "ollama_server": "localhost",
   "ollama_port": 11434,
   "ollama_model": "llama2",
