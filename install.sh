@@ -35,55 +35,129 @@ echo "[2/10] Installing system dependencies..."
 # Prefer 3.11 or 3.12 for better compatibility with dependencies
 # Python 3.13 is too new for some packages like tflite-runtime (required by openwakeword)
 
-# First, try to install Python 3.11 or 3.12 if they're available in apt repository
 PYTHON_VERSION=""
 PYTHON_CMD=""
 
-# Check if Python 3.11 is available in apt and install it
-if apt-cache show python3.11 &> /dev/null; then
-    echo "Python 3.11 is available in repository, installing..."
-    $SUDO_CMD apt-get install -y python3.11 python3.11-venv python3.11-dev
-    PYTHON_VERSION="3.11"
-    PYTHON_CMD="python3.11"
-    echo "Using Python 3.11 for best compatibility"
-# If not, check for Python 3.12
-elif apt-cache show python3.12 &> /dev/null; then
-    echo "Python 3.12 is available in repository, installing..."
-    $SUDO_CMD apt-get install -y python3.12 python3.12-venv python3.12-dev
-    PYTHON_VERSION="3.12"
-    PYTHON_CMD="python3.12"
-    echo "Using Python 3.12 for best compatibility"
-# If neither 3.11 nor 3.12 are available, check what's already installed
-elif command -v python3.11 &> /dev/null; then
-    PYTHON_VERSION="3.11"
-    PYTHON_CMD="python3.11"
-    echo "Using existing Python 3.11 for best compatibility"
-elif command -v python3.12 &> /dev/null; then
-    PYTHON_VERSION="3.12"
-    PYTHON_CMD="python3.12"
-    echo "Using existing Python 3.12 for best compatibility"
-elif command -v python3.13 &> /dev/null; then
-    PYTHON_VERSION="3.13"
-    PYTHON_CMD="python3.13"
-    echo "WARNING: Using Python 3.13 which may have compatibility issues with some dependencies"
-    echo "If installation fails, please install Python 3.11 or 3.12 manually"
-else
-    # Fall back to default python3
-    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    PYTHON_CMD="python${PYTHON_VERSION}"
-    echo "Detected Python version: ${PYTHON_VERSION}"
+# Function to check if a command exists and works
+check_python_version() {
+    local cmd=$1
+    if command -v "$cmd" &> /dev/null; then
+        version=$($cmd -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+        echo "$version"
+        return 0
+    fi
+    return 1
+}
 
-    # If default python3 is 3.13+, warn about compatibility
-    if [ "${PYTHON_VERSION}" = "3.13" ] || [ "${PYTHON_VERSION}" = "3.14" ]; then
-        echo "WARNING: Using Python ${PYTHON_VERSION} which may have compatibility issues with some dependencies"
-        echo "If installation fails, please install Python 3.11 or 3.12 manually"
+# Check if Python 3.11 or 3.12 is already installed
+if version=$(check_python_version "python3.11"); then
+    PYTHON_VERSION="$version"
+    PYTHON_CMD="python3.11"
+    echo "Found existing Python 3.11"
+elif version=$(check_python_version "python3.12"); then
+    PYTHON_VERSION="$version"
+    PYTHON_CMD="python3.12"
+    echo "Found existing Python 3.12"
+else
+    # Try to install Python 3.11 from apt
+    echo "Python 3.11/3.12 not found, attempting to install Python 3.11..."
+    set +e  # Temporarily disable exit on error
+    $SUDO_CMD apt-get install -y python3.11 python3.11-venv python3.11-dev &>/dev/null
+    apt_result=$?
+    set -e  # Re-enable exit on error
+
+    if [ $apt_result -eq 0 ]; then
+        PYTHON_VERSION="3.11"
+        PYTHON_CMD="python3.11"
+        echo "Successfully installed Python 3.11"
+    else
+        # If that fails, try Python 3.12
+        echo "Python 3.11 not available, trying Python 3.12..."
+        set +e
+        $SUDO_CMD apt-get install -y python3.12 python3.12-venv python3.12-dev &>/dev/null
+        apt_result=$?
+        set -e
+
+        if [ $apt_result -eq 0 ]; then
+            PYTHON_VERSION="3.12"
+            PYTHON_CMD="python3.12"
+            echo "Successfully installed Python 3.12"
+        else
+            # If neither can be installed from apt, try using pyenv
+            echo "Python 3.11/3.12 not available in apt repositories"
+            echo "Attempting to install Python 3.11 using pyenv..."
+
+            # Install pyenv dependencies
+            $SUDO_CMD apt-get install -y make build-essential libssl-dev zlib1g-dev \
+                libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+                libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
+                libffi-dev liblzma-dev
+
+            # Install pyenv if not already installed
+            if [ ! -d "$HOME/.pyenv" ]; then
+                echo "Installing pyenv..."
+                curl https://pyenv.run | bash
+                export PYENV_ROOT="$HOME/.pyenv"
+                export PATH="$PYENV_ROOT/bin:$PATH"
+                eval "$(pyenv init -)"
+            else
+                echo "pyenv already installed"
+                export PYENV_ROOT="$HOME/.pyenv"
+                export PATH="$PYENV_ROOT/bin:$PATH"
+                eval "$(pyenv init -)"
+            fi
+
+            # Install Python 3.11 using pyenv
+            echo "Installing Python 3.11.11 via pyenv (this may take several minutes)..."
+            set +e
+            pyenv install -s 3.11.11  # -s skips if already installed
+            pyenv_result=$?
+            set -e
+
+            if [ $pyenv_result -eq 0 ]; then
+                pyenv local 3.11.11
+                PYTHON_VERSION="3.11"
+                PYTHON_CMD="$HOME/.pyenv/versions/3.11.11/bin/python3.11"
+
+                if [ ! -f "$PYTHON_CMD" ]; then
+                    echo "ERROR: Failed to install Python 3.11 via pyenv"
+                    echo ""
+                    echo "Python 3.13 is not compatible with required dependencies (tflite-runtime)."
+                    echo "Please install Python 3.11 or 3.12 manually and re-run this script."
+                    echo ""
+                    echo "Manual installation options:"
+                    echo "1. Build from source: https://www.python.org/downloads/"
+                    echo "2. Use pyenv: https://github.com/pyenv/pyenv#installation"
+                    exit 1
+                fi
+                echo "Successfully installed Python 3.11 via pyenv"
+            else
+                echo "ERROR: Failed to install Python 3.11 via pyenv"
+                echo ""
+                echo "Python 3.13 is not compatible with required dependencies (tflite-runtime)."
+                echo "Please install Python 3.11 or 3.12 manually and re-run this script."
+                echo ""
+                echo "Manual installation options:"
+                echo "1. Build from source: https://www.python.org/downloads/"
+                echo "2. Use pyenv: https://github.com/pyenv/pyenv#installation"
+                exit 1
+            fi
+        fi
     fi
 fi
 
-# Check minimum Python version (3.9+)
+echo "Using Python ${PYTHON_VERSION} (${PYTHON_CMD})"
+
+# Verify Python version is compatible (3.9-3.12)
 MIN_VERSION="3.9"
+MAX_VERSION="3.12"
 if [ "$(printf '%s\n' "$MIN_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" != "$MIN_VERSION" ]; then
     echo "ERROR: Python ${PYTHON_VERSION} is too old. Minimum required version is ${MIN_VERSION}"
+    exit 1
+fi
+if [ "$(printf '%s\n' "$PYTHON_VERSION" "$MAX_VERSION" | sort -V | head -n1)" != "$PYTHON_VERSION" ]; then
+    echo "ERROR: Python ${PYTHON_VERSION} is too new. Maximum supported version is ${MAX_VERSION}"
+    echo "This is due to dependencies like tflite-runtime not supporting Python 3.13+"
     exit 1
 fi
 
@@ -117,11 +191,11 @@ fi
 
 # Create project directory structure
 echo "[4/10] Creating directory structure..."
-mkdir -p ~/jasper/logs
-mkdir -p ~/jasper/models
-mkdir -p ~/jasper/data
-mkdir -p ~/jasper/templates
-mkdir -p ~/jasper/static
+mkdir -p logs
+mkdir -p models
+mkdir -p data
+mkdir -p templates
+mkdir -p static
 
 # Create Python virtual environment
 echo "[5/10] Creating Python virtual environment..."
