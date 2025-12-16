@@ -5,6 +5,7 @@ Flask application with authentication and real-time log streaming
 """
 
 import os
+import sys
 import json
 import logging
 import time
@@ -12,9 +13,22 @@ from pathlib import Path
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from flask_cors import CORS
+# Check for required dependencies
+try:
+    from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
+    from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+    from flask_cors import CORS
+except ImportError as e:
+    print("ERROR: Required dependencies are not installed.", file=sys.stderr)
+    print(f"Missing module: {e.name}", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("To fix this issue, run ONE of the following:", file=sys.stderr)
+    print("  1. Use the startup script (RECOMMENDED): ./run_webapp.sh", file=sys.stderr)
+    print("  2. Run the full installation script: ./install.sh", file=sys.stderr)
+    print("  3. Install dependencies manually:", file=sys.stderr)
+    print("     pip3 install --break-system-packages flask==3.0.0 flask-login==0.6.3 flask-cors==4.0.0", file=sys.stderr)
+    print("", file=sys.stderr)
+    sys.exit(1)
 
 # Configuration
 CONFIG_FILE = "config.json"
