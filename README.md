@@ -24,9 +24,9 @@ A privacy-focused, local voice assistant for Raspberry Pi 4B with ReSpeaker 2-Mi
 
 ## 💻 Software Requirements
 
-- **OS**: Raspberry Pi OS Trixie (Debian 13)
+- **OS**: Raspberry Pi OS Bookworm (Debian 12)
 - **Ollama Server**: Running on local network (can be same Pi or another machine)
-- **Python**: 3.11+ (included with Raspberry Pi OS Trixie)
+- **Python**: 3.11+ (included with Raspberry Pi OS Bookworm)
 
 ## 📦 Installation
 
