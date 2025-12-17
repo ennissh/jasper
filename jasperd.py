@@ -409,6 +409,7 @@ class JasperAssistant:
         )
         self.audio = pyaudio.PyAudio()
         self.audio_available = self._check_audio_devices()
+        self.last_config_reload = 0
 
     def _check_audio_devices(self):
         """Check if audio input devices are available."""
@@ -455,10 +456,12 @@ class JasperAssistant:
             logging.info("Listening for wake word...")
 
             while running and config.get("enabled", False):
-                # Reload config periodically
-                if int(time.time()) % 5 == 0:
+                # Reload config periodically (every 5 seconds)
+                current_time = time.time()
+                if current_time - self.last_config_reload >= 5:
                     load_config()
                     self.update_config()
+                    self.last_config_reload = current_time
 
                 try:
                     chunk = stream.read(1280, exception_on_overflow=False)
