@@ -267,7 +267,8 @@ class WakeWordDetector:
     """Detects wake word using openwakeword."""
 
     def __init__(self, wake_word="hey_jarvis_v0.1", threshold=0.5):
-        # Use pre-trained model (hey_jarvis works well for "Jasper")
+        # Use pre-trained openwakeword model
+        # Common models: hey_jarvis_v0.1, alexa_v0.1, hey_mycroft_v0.1
         self.model = Model(wakeword_models=[wake_word], inference_framework="onnx")
         self.threshold = threshold
         self.sample_rate = 16000
@@ -398,7 +399,8 @@ class JasperAssistant:
     """Main Jasper voice assistant."""
 
     def __init__(self):
-        self.wake_word_detector = WakeWordDetector()
+        wake_word_model = config.get("wake_word_model", "hey_jarvis_v0.1")
+        self.wake_word_detector = WakeWordDetector(wake_word=wake_word_model)
         self.speech_recognizer = SpeechRecognizer()
         self.audio_recorder = AudioRecorder(sample_rate=16000)
         self.tts = TextToSpeech()

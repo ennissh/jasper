@@ -6,7 +6,7 @@
   "volume": 75,
   "conversation_history_enabled": true,
   "max_conversation_turns": 10,
-  "wake_word": "jasper",
+  "wake_word_model": "hey_jarvis_v0.1",
   "log_max_size_mb": 2048,
   "log_retention_days": 30,
   "audio_input_device": "default",
