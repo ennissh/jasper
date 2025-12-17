@@ -78,8 +78,9 @@ def setup_logging():
 
     log_file = log_dir / f"jasper_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
+    # Use DEBUG level to see wake word scores
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(log_file),
@@ -266,9 +267,10 @@ class SpeechRecognizer:
 class WakeWordDetector:
     """Detects wake word using openwakeword."""
 
-    def __init__(self, wake_word="hey_jarvis_v0.1", threshold=0.5):
+    def __init__(self, wake_word="hey_jarvis_v0.1", threshold=0.35):
         # Use pre-trained openwakeword model
         # Common models: hey_jarvis_v0.1, alexa_v0.1, hey_mycroft_v0.1
+        # Threshold: 0.35 is more sensitive, 0.5 is balanced, 0.7 is very strict
         self.model = Model(wakeword_models=[wake_word], inference_framework="onnx")
         self.threshold = threshold
         self.sample_rate = 16000
@@ -284,10 +286,19 @@ class WakeWordDetector:
         predictions = self.model.predict(audio_array)
 
         # Check if any wake word exceeds threshold
+        max_score = 0
+        detected_word = None
         for word, score in predictions.items():
+            if score > max_score:
+                max_score = score
+                detected_word = word
             if score > self.threshold:
                 logging.info(f"Wake word detected! ({word}: {score:.2f})")
                 return True
+
+        # Log high scores even if below threshold (for debugging)
+        if max_score > 0.2:
+            logging.debug(f"Wake word score: {detected_word}: {max_score:.2f} (threshold: {self.threshold})")
 
         return False
 
@@ -400,7 +411,8 @@ class JasperAssistant:
 
     def __init__(self):
         wake_word_model = config.get("wake_word_model", "hey_jarvis_v0.1")
-        self.wake_word_detector = WakeWordDetector(wake_word=wake_word_model)
+        wake_word_threshold = config.get("wake_word_threshold", 0.35)
+        self.wake_word_detector = WakeWordDetector(wake_word=wake_word_model, threshold=wake_word_threshold)
         self.speech_recognizer = SpeechRecognizer()
         self.audio_recorder = AudioRecorder(sample_rate=16000)
         self.tts = TextToSpeech()
