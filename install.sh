@@ -181,9 +181,25 @@ $SUDO_CMD apt-get install -y \
 # Install ReSpeaker 2-Mics HAT drivers
 echo "[3/10] Installing ReSpeaker 2-Mics HAT drivers..."
 if [ ! -d "seeed-voicecard" ]; then
-    git clone https://github.com/respeaker/seeed-voicecard.git
+    # Detect kernel version to use appropriate branch
+    KERNEL_VERSION=$(uname -r | cut -d. -f1,2)
+    echo "Detected kernel version: $(uname -r)"
+
+    # Use HinTak's fork which supports newer kernels (official repo only works with old kernels)
+    # For Bookworm (kernel 6.1.x), use v6.1 branch
+    echo "Cloning seeed-voicecard drivers (HinTak's fork for kernel ${KERNEL_VERSION} compatibility)..."
+    git clone -b "v${KERNEL_VERSION}" https://github.com/HinTak/seeed-voicecard.git
     cd seeed-voicecard
-    $SUDO_CMD ./install.sh
+
+    # Detect architecture and use appropriate installer
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "aarch64" ]; then
+        echo "Detected ARM64 architecture, using install_arm64.sh"
+        $SUDO_CMD ./install_arm64.sh
+    else
+        echo "Detected $ARCH architecture, using install.sh"
+        $SUDO_CMD ./install.sh
+    fi
     cd ..
 else
     echo "ReSpeaker drivers already installed, skipping..."
