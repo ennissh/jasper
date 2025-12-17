@@ -279,28 +279,32 @@ class WakeWordDetector:
 
     def detect(self, audio_chunk):
         """Check if wake word is detected in audio chunk."""
-        # Convert bytes to numpy array
-        audio_array = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32) / 32768.0
+        try:
+            # Convert bytes to numpy array
+            audio_array = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32) / 32768.0
 
-        # Get predictions
-        predictions = self.model.predict(audio_array)
+            # Get predictions
+            predictions = self.model.predict(audio_array)
 
-        # Check if any wake word exceeds threshold
-        max_score = 0
-        detected_word = None
-        for word, score in predictions.items():
-            if score > max_score:
-                max_score = score
-                detected_word = word
-            if score > self.threshold:
-                logging.info(f"Wake word detected! ({word}: {score:.2f})")
-                return True
+            # Check if any wake word exceeds threshold
+            max_score = 0
+            detected_word = None
+            for word, score in predictions.items():
+                if score > max_score:
+                    max_score = score
+                    detected_word = word
+                if score > self.threshold:
+                    logging.info(f"Wake word detected! ({word}: {score:.2f})")
+                    return True
 
-        # Log high scores even if below threshold (for debugging)
-        if max_score > 0.2:
-            logging.debug(f"Wake word score: {detected_word}: {max_score:.2f} (threshold: {self.threshold})")
+            # Log ALL scores for debugging (even very low ones)
+            if max_score > 0.01:
+                logging.debug(f"Wake word score: {detected_word}: {max_score:.3f} (threshold: {self.threshold})")
 
-        return False
+            return False
+        except Exception as e:
+            logging.error(f"Error in wake word detection: {e}", exc_info=True)
+            return False
 
 
 class TextToSpeech:
@@ -469,6 +473,9 @@ class JasperAssistant:
 
             logging.info("Listening for wake word...")
 
+            chunk_count = 0
+            last_heartbeat = time.time()
+
             while running and config.get("enabled", False):
                 # Reload config periodically (every 5 seconds)
                 current_time = time.time()
@@ -477,8 +484,15 @@ class JasperAssistant:
                     self.update_config()
                     self.last_config_reload = current_time
 
+                # Heartbeat every 10 seconds to show we're running
+                if current_time - last_heartbeat >= 10:
+                    logging.debug(f"Wake word listener active, processed {chunk_count} chunks in last 10s")
+                    chunk_count = 0
+                    last_heartbeat = current_time
+
                 try:
                     chunk = stream.read(1280, exception_on_overflow=False)
+                    chunk_count += 1
 
                     if self.wake_word_detector.detect(chunk):
                         return True
